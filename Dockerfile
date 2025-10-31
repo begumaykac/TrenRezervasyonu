@@ -1,22 +1,32 @@
-# 1. Build aşaması
+# Build aşaması
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /app
 
+# Çözüm dosyasını kopyala
+COPY TrenRezervasyon.sln ./
+
 # Proje dosyalarını kopyala
-COPY *.csproj ./
-RUN dotnet restore
+COPY api/api.csproj ./api/
 
+# Restore
+RUN dotnet restore TrenRezervasyon.sln
+
+# Tüm dosyaları kopyala
 COPY . ./
-RUN dotnet publish -c Release -o out
 
-# 2. Runtime aşaması
+# Publish
+RUN dotnet publish api/api.csproj -c Release -o out
+
+# Runtime aşaması
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
+
+# Yayınlanan dosyaları kopyala
 COPY --from=build /app/out .
 
-# Portu tanımla (Render PORT environment variable ile yönlendirir)
+# Ortam değişkenlerini ayarla
 ENV ASPNETCORE_URLS=http://+:${PORT:-5000}
 EXPOSE 5000
 
-# Çalıştır
-ENTRYPOINT ["dotnet", "TrenRezervasyon.dll"]
+# Uygulamayı başlat
+ENTRYPOINT ["dotnet", "api.dll"]
